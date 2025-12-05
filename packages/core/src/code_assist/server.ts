@@ -16,7 +16,6 @@ import type {
   ClientMetadata,
   RetrieveUserQuotaRequest,
   RetrieveUserQuotaResponse,
-  ReceiveEventRequest,
 } from './types.js';
 import type {
   ListExperimentsRequest,
@@ -177,8 +176,8 @@ export class CodeAssistServer implements ContentGenerator {
     );
   }
 
-  async receiveEvents(req: ReceiveEventRequest): Promise<void> {
-    const res = await this.requestPost('event:receive', req);
+  async receiveEvents(): Promise<void> {
+    const res = await this.requestGet('event:receive');
     console.log(res);
   }
 
