@@ -145,9 +145,27 @@ export function extractMessageText(message: Message | undefined): string {
 export function extractTaskText(task: Task): string {
   let output = `ID:      ${task.id}\n`;
   output += `State:   ${task.status.state}\n`;
-  const messageText = extractMessageText(task.status.message);
-  if (messageText) {
-    output += `Message: ${messageText}\n`;
+
+  // Extract message from task status
+  const statusMessageText = extractMessageText(task.status.message);
+  if (statusMessageText) {
+    output += `Status Message: ${statusMessageText}\n`;
+  }
+
+  // Extract artifacts
+  if (task.artifacts && task.artifacts.length > 0) {
+    output += `Artifacts:\n`;
+    for (const artifact of task.artifacts) {
+      output += `  - Name: ${artifact.name}\n`;
+      if (artifact.parts && artifact.parts.length > 0) {
+        const artifactText = extractMessageText(
+          { kind: 'message', parts: artifact.parts, messageId: '' } as Message,
+        );
+        if (artifactText) {
+          output += `    Content: ${artifactText}\n`;
+        }
+      }
+    }
   }
 
   // if (task.history && task.history.length > 0) {
