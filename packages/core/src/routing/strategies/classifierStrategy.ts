@@ -135,6 +135,14 @@ export class ClassifierStrategy implements RoutingStrategy {
     config: Config,
     baseLlmClient: BaseLlmClient,
   ): Promise<RoutingDecision | null> {
+    // When running with fake responses or recording responses (testing mode), we
+    // skip the classifier to ensure deterministic behavior and match the
+    // linear sequence of the recorded responses. The classifier introduces
+    // an extra LLM call that desynchronizes the recording if not accounted for.
+    if (config.fakeResponses || config.recordResponses) {
+      return null;
+    }
+
     const startTime = Date.now();
     try {
       let promptId = promptIdContext.getStore();
