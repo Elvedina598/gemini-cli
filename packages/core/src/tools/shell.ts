@@ -38,10 +38,12 @@ import type { AnsiOutput } from '../utils/terminalSerializer.js';
 import {
   getCommandRoots,
   initializeShellParsers,
-  isCommandAllowed,
-  isShellInvocationAllowlisted,
   stripShellWrapper,
 } from '../utils/shell-utils.js';
+import {
+  isCommandAllowed,
+  isShellInvocationAllowlisted,
+} from '../utils/shell-permissions.js';
 import { SHELL_TOOL_NAME } from './tool-names.js';
 import type { MessageBus } from '../confirmation-bus/message-bus.js';
 
@@ -87,7 +89,15 @@ export class ShellToolInvocation extends BaseToolInvocation<
   protected override getPolicyUpdateOptions(
     outcome: ToolConfirmationOutcome,
   ): PolicyUpdateOptions | undefined {
-    if (outcome === ToolConfirmationOutcome.ProceedAlwaysAndSave) {
+    if (
+      outcome === ToolConfirmationOutcome.ProceedAlwaysAndSave ||
+      outcome === ToolConfirmationOutcome.ProceedAlways
+    ) {
+      const command = stripShellWrapper(this.params.command);
+      const rootCommands = [...new Set(getCommandRoots(command))];
+      if (rootCommands.length > 0) {
+        return { commandPrefix: rootCommands };
+      }
       return { commandPrefix: this.params.command };
     }
     return undefined;
@@ -252,7 +262,13 @@ export class ShellToolInvocation extends BaseToolInvocation<
           },
           combinedController.signal,
           this.config.getEnableInteractiveShell(),
-          { ...shellExecutionConfig, pager: 'cat' },
+          {
+            ...shellExecutionConfig,
+            pager: 'cat',
+            sanitizationConfig:
+              shellExecutionConfig?.sanitizationConfig ??
+              this.config.sanitizationConfig,
+          },
         );
 
       if (pid && setPidCallback) {
